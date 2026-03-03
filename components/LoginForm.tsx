@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ToastProvider";
 
 export function LoginForm() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,12 +30,15 @@ export function LoginForm() {
     const data = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      setMessage(data.error || "Request failed");
+      const msg = data.error || "Request failed";
+      setMessage(msg);
+      showToast(msg, "error");
       setLoading(false);
       return;
     }
 
     setMessage("Success. Redirecting to dashboard...");
+    showToast("Success. Redirecting to dashboard...", "success");
     router.push("/dashboard");
     router.refresh();
     setLoading(false);
@@ -52,6 +57,7 @@ export function LoginForm() {
         <button
           type="button"
           className={`button ${mode === "login" ? "" : "secondary"}`}
+          disabled={loading}
           onClick={() => setMode("login")}
         >
           Login
@@ -59,6 +65,7 @@ export function LoginForm() {
         <button
           type="button"
           className={`button ${mode === "register" ? "" : "secondary"}`}
+          disabled={loading}
           onClick={() => setMode("register")}
         >
           Register
@@ -75,7 +82,7 @@ export function LoginForm() {
         <input type="email" name="email" placeholder="Email" required />
         <input type="password" name="password" placeholder="Password" required />
         <button className="button" disabled={loading}>
-          {loading ? "Processing..." : mode === "login" ? "Sign In" : "Create Account"}
+          {loading ? (mode === "login" ? "Signing in..." : "Creating account...") : mode === "login" ? "Sign In" : "Create Account"}
         </button>
       </form>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useToast } from "@/components/ToastProvider";
 
 type AccountUser = {
   id: string;
@@ -14,23 +15,45 @@ export function AccountProfileForm({ user }: { user: AccountUser }) {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { showToast } = useToast();
 
   return (
-    <div className="card">
-      <h3 style={{ marginTop: 0 }}>Account Profile</h3>
-      <div className="toolbar" style={{ display: "grid" }}>
-        <input value={user.email} disabled />
-        <input
-          value={displayName}
-          placeholder="Display name"
-          onChange={(e) => setDisplayName(e.target.value)}
-        />
-        <input
-          type="password"
-          value={password}
-          placeholder="New password (optional)"
-          onChange={(e) => setPassword(e.target.value)}
-        />
+    <div className="card account-card">
+      <div className="account-card-head">
+        <div>
+          <h3 style={{ margin: 0 }}>Account Details</h3>
+          <p className="muted" style={{ margin: "6px 0 0" }}>
+            Update your profile and security settings.
+          </p>
+        </div>
+        <span className="badge">{user.email}</span>
+      </div>
+
+      <div className="account-form-grid">
+        <label className="account-field">
+          <span>Email</span>
+          <input value={user.email} disabled />
+        </label>
+        <label className="account-field">
+          <span>Display Name</span>
+          <input
+            value={displayName}
+            placeholder="Display name"
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+        </label>
+        <label className="account-field">
+          <span>New Password (optional)</span>
+          <input
+            type="password"
+            value={password}
+            placeholder="Enter new password"
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </label>
+      </div>
+
+      <div className="account-actions">
         <button
           className="button"
           type="button"
@@ -49,18 +72,35 @@ export function AccountProfileForm({ user }: { user: AccountUser }) {
               });
               const data = await res.json().catch(() => ({}));
               if (!res.ok) {
-                setError(data.error || "Failed to update profile");
+                const msg = data.error || "Failed to update profile";
+                setError(msg);
+                showToast(msg, "error");
                 return;
               }
               setPassword("");
               setMessage("Profile updated.");
+              showToast("Profile updated.", "success");
             });
           }}
         >
           {isPending ? "Saving..." : "Save Profile"}
         </button>
-        {message && <div style={{ color: "#225a43" }}>{message}</div>}
-        {error && <div style={{ color: "#b42318" }}>{error}</div>}
+        <button
+          className="button secondary"
+          type="button"
+          disabled={isPending}
+          onClick={() => {
+            setPassword("");
+            setError(null);
+          }}
+        >
+          Clear Password
+        </button>
+      </div>
+
+      <div className="account-status">
+        {message && <div className="account-ok">{message}</div>}
+        {error && <div className="account-err">{error}</div>}
       </div>
     </div>
   );
