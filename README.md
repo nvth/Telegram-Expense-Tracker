@@ -2,6 +2,24 @@
 
 Next.js App Router + Prisma + PostgreSQL (Supabase compatible) dashboard for personal expense tracking via Telegram bot messages.
 
+## Documentation Menu
+
+- [README](README.md)
+- [Deployment Guide](DEPLOY.md)
+- [Changelog](CHANGELOG.md)
+- [Product Spec](SPEC.md)
+
+### Quick Navigation
+
+- [Stack](#stack)
+- [Current Features](#current-features)
+- [Routes (UI)](#routes-ui)
+- [API Summary](#api-summary)
+- [Setup](#setup)
+- [Docker](#docker)
+- [Telegram Setup](#telegram-setup)
+- [Notes](#notes)
+
 ## Stack
 
 - Next.js (App Router, TypeScript)
