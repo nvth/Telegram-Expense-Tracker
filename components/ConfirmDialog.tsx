@@ -58,6 +58,7 @@ export function ConfirmDialog({
                 style={{
                     width: "min(400px, 100%)",
                     padding: 24,
+                    margin: "0 auto",
                     background: "var(--panel-solid)",
                     boxShadow: "var(--shadow-xl)",
                     border: "1px solid var(--line)",

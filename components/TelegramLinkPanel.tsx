@@ -199,7 +199,7 @@ export function TelegramLinkPanel({
       ) : (
         <div style={{ display: "grid", gap: 28 }}>
           {/* Steps + Code generator side by side */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32, alignItems: "start" }}>
+          <div className="settings-row" style={{ gap: 32, alignItems: "start" }}>
             {/* Steps */}
             <div style={{ display: "grid", gap: 20 }}>
               {[

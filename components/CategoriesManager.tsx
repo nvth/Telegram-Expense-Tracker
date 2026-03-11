@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { DeleteCategoryButton } from "@/components/DeleteCategoryButton";
@@ -53,6 +54,8 @@ export function CategoriesManager({ categories }: { categories: CategoryRow[] })
   const [quickColorSaving, setQuickColorSaving] = useState(false);
   const [quickColorAnchor, setQuickColorAnchor] = useState<{ top: number; left: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
   const [currentPage, setCurrentPage] = useState(1);
   const totalPages = Math.max(1, Math.ceil(categories.length / PAGE_SIZE));
   const safePage = Math.min(currentPage, totalPages);
@@ -168,11 +171,14 @@ export function CategoriesManager({ categories }: { categories: CategoryRow[] })
   }
 
   return (
-    <div className="grid cols-2-to-1" style={{ alignItems: "start" }}>
-      <div className="card categories-form-card">
-        <h3 style={{ marginTop: 0, fontSize: "1.1rem", fontWeight: 700 }}>New Category</h3>
-        <p className="muted" style={{ marginBottom: 20, fontSize: "0.9rem" }}>Create a new category for your expenses.</p>
-        <div className="toolbar" style={{ display: "grid", gap: 16 }}>
+    <div className="settings-page">
+      {/* New Category Form */}
+      <section className="s-card">
+        <div className="s-card-head">
+          <h2 className="s-title">New Category</h2>
+          <p className="s-subtitle">Create a new category for your expenses.</p>
+        </div>
+        <div style={{ display: "grid", gap: 16 }}>
           <div style={{ display: "grid", gap: 6 }}>
             <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "var(--muted)" }}>Category Name</span>
             <input
@@ -190,9 +196,9 @@ export function CategoriesManager({ categories }: { categories: CategoryRow[] })
             />
           </div>
 
-          <div className="card" style={{ padding: 16, background: "rgba(0,0,0,0.02)", border: "1px dashed var(--line)" }}>
+          <div style={{ padding: 14, background: "var(--bg)", border: "1px dashed var(--line)", borderRadius: "var(--radius-md)" }}>
             <div style={{ marginBottom: 12, fontWeight: 700, fontSize: "0.85rem", color: "var(--ink)" }}>Color Identity</div>
-            <div className="toolbar" style={{ gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               {COLOR_PRESETS.map((color) => {
                 const selected = form.color.toLowerCase() === color.toLowerCase();
                 return (
@@ -259,96 +265,145 @@ export function CategoriesManager({ categories }: { categories: CategoryRow[] })
             />
           </div>
 
-          <button className="button" type="button" disabled={isPending} onClick={onCreate} style={{ marginTop: 8 }}>
+          <button className="button" type="button" disabled={isPending} onClick={onCreate} style={{ marginTop: 4 }}>
             {isPending && pendingAction === "create" ? "Creating..." : "Create Category"}
           </button>
           {error && <div style={{ color: "var(--error)", fontSize: "0.85rem", marginTop: 4 }}>{error}</div>}
         </div>
-      </div>
+      </section>
 
-      <div className="card">
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 700 }}>Existing Categories</h3>
-          <span className="badge" style={{ background: "var(--primary-light)", color: "var(--primary)", border: "none" }}>
-            {categories.length} total
-          </span>
-        </header>
+      {/* Existing Categories */}
+      <section className="s-card">
+        <div className="s-card-head" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h2 className="s-title">Existing Categories</h2>
+            <p className="s-subtitle">Manage your expense categories</p>
+          </div>
+          <span className="s-pill s-pill--ok">{categories.length} total</span>
+        </div>
 
-        {editingId ? (
-          <div className="card" style={{ marginBottom: 20, border: "1px solid var(--accent-light)", background: "var(--primary-light)", padding: 16 }}>
-            <h4 style={{ marginTop: 0, fontSize: "1rem", fontWeight: 700, color: "var(--accent-dark)" }}>Edit Category</h4>
-            <div className="toolbar" style={{ display: "grid", gap: 12 }}>
-              <div style={{ display: "grid", gap: 4 }}>
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--muted)" }}>Name</span>
-                <input
-                  placeholder="Name"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                />
-              </div>
-              <div style={{ display: "grid", gap: 4 }}>
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--muted)" }}>Slug</span>
-                <input
-                  placeholder="Slug"
-                  value={editForm.slug}
-                  onChange={(e) => setEditForm((f) => ({ ...f, slug: e.target.value }))}
-                />
-              </div>
+        {mounted && editingId && typeof document !== "undefined" && createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            style={{
+              position: "fixed",
+              inset: 0,
+              background: "rgba(15, 23, 42, 0.4)",
+              backdropFilter: "blur(4px)",
+              zIndex: 10000,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: 20,
+            }}
+            onClick={() => { if (!isPending) setEditingId(null); }}
+          >
+            <div
+              className="card"
+              style={{
+                width: "min(460px, 100%)",
+                padding: 28,
+                margin: "0 auto",
+                background: "var(--panel-solid)",
+                boxShadow: "var(--shadow-xl)",
+                border: "1px solid var(--line)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+                maxHeight: "90vh",
+                overflow: "auto",
+                borderRadius: "var(--radius-xl)",
+                animation: "modalIn 0.2s ease-out",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700, color: "var(--ink)" }}>Edit Category</h3>
 
-              <div className="card" style={{ padding: 12, background: "rgba(255,255,255,0.5)" }}>
-                <div style={{ marginBottom: 8, fontWeight: 700, fontSize: "0.8rem" }}>Color Palette</div>
-                <div className="toolbar" style={{ gap: 6 }}>
-                  {COLOR_PRESETS.map((color) => {
-                    const selected = editForm.color.toLowerCase() === color.toLowerCase();
-                    return (
-                      <button
-                        key={color}
-                        type="button"
-                        title={color}
-                        aria-label={`Select color ${color}`}
-                        onClick={() => setEditForm((f) => ({ ...f, color }))}
-                        style={{
-                          width: 24,
-                          height: 24,
-                          borderRadius: "4px",
-                          border: "none",
-                          background: color,
-                          cursor: "pointer",
-                          padding: 0,
-                          boxShadow: selected ? `0 0 0 2px white, 0 0 0 3px ${color}` : "var(--shadow-sm)"
-                        }}
-                      />
-                    );
-                  })}
+              <div style={{ display: "grid", gap: 12 }}>
+                <div style={{ display: "grid", gap: 4 }}>
+                  <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--muted)" }}>Name</span>
                   <input
-                    type="color"
-                    value={/^#([0-9a-f]{6})$/i.test(editForm.color) ? editForm.color : "#6366f1"}
-                    onChange={(e) => setEditForm((f) => ({ ...f, color: e.target.value }))}
-                    title="Custom color"
-                    style={{
-                      width: 32,
-                      height: 24,
-                      border: "1px solid var(--line)",
-                      borderRadius: "4px",
-                      padding: 0,
-                      background: "none"
-                    }}
+                    placeholder="Name"
+                    value={editForm.name}
+                    onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  />
+                </div>
+                <div style={{ display: "grid", gap: 4 }}>
+                  <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--muted)" }}>Slug</span>
+                  <input
+                    placeholder="Slug"
+                    value={editForm.slug}
+                    onChange={(e) => setEditForm((f) => ({ ...f, slug: e.target.value }))}
+                  />
+                </div>
+
+                <div style={{ padding: 12, background: "rgba(0,0,0,0.03)", borderRadius: 8, border: "1px dashed var(--line)" }}>
+                  <div style={{ marginBottom: 8, fontWeight: 700, fontSize: "0.8rem" }}>Color Palette</div>
+                  <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                    {COLOR_PRESETS.map((color) => {
+                      const selected = editForm.color.toLowerCase() === color.toLowerCase();
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          title={color}
+                          aria-label={`Select color ${color}`}
+                          onClick={() => setEditForm((f) => ({ ...f, color }))}
+                          style={{
+                            width: 26,
+                            height: 26,
+                            borderRadius: "6px",
+                            border: "none",
+                            background: color,
+                            cursor: "pointer",
+                            padding: 0,
+                            boxShadow: selected ? `0 0 0 2px white, 0 0 0 4px ${color}` : "var(--shadow-sm)",
+                            transition: "all 0.2s ease",
+                          }}
+                        />
+                      );
+                    })}
+                    <input
+                      type="color"
+                      value={/^#([0-9a-f]{6})$/i.test(editForm.color) ? editForm.color : "#6366f1"}
+                      onChange={(e) => setEditForm((f) => ({ ...f, color: e.target.value }))}
+                      title="Custom color"
+                      style={{
+                        width: 40,
+                        height: 26,
+                        border: "1px solid var(--line)",
+                        borderRadius: "6px",
+                        padding: 0,
+                        background: "none",
+                        cursor: "pointer",
+                      }}
+                    />
+                  </div>
+                  <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", fontSize: "0.85rem", color: "var(--muted)" }}>
+                    <span>Preview:</span>
+                    <span className="badge" style={{
+                      color: editForm.color || "var(--ink)",
+                      borderColor: editForm.color || "var(--line)",
+                      background: editForm.color ? `${editForm.color}15` : "transparent",
+                      fontWeight: 600,
+                    }}>
+                      {editForm.name || "Preview"}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gap: 4 }}>
+                  <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--muted)" }}>Icon (Optional)</span>
+                  <input
+                    placeholder="e.g. 🍔"
+                    value={editForm.icon}
+                    onChange={(e) => setEditForm((f) => ({ ...f, icon: e.target.value }))}
                   />
                 </div>
               </div>
 
-              <div style={{ display: "grid", gap: 4 }}>
-                <span style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--muted)" }}>Icon</span>
-                <input
-                  placeholder="Icon"
-                  value={editForm.icon}
-                  onChange={(e) => setEditForm((f) => ({ ...f, icon: e.target.value }))}
-                />
-              </div>
-              <div className="toolbar" style={{ marginTop: 8 }}>
-                <button className="button" type="button" disabled={isPending} onClick={saveEdit}>
-                  {isPending && pendingAction === "edit" ? "Saving..." : "Save Changes"}
-                </button>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12, marginTop: 8 }}>
                 <button
                   className="button secondary"
                   type="button"
@@ -357,10 +412,14 @@ export function CategoriesManager({ categories }: { categories: CategoryRow[] })
                 >
                   Cancel
                 </button>
+                <button className="button" type="button" disabled={isPending} onClick={saveEdit}>
+                  {isPending && pendingAction === "edit" ? "Saving..." : "Save Changes"}
+                </button>
               </div>
             </div>
-          </div>
-        ) : null}
+          </div>,
+          document.body
+        )}
 
         <div className="table-wrap">
           <table className="mobile-stack-table">
@@ -469,78 +528,80 @@ export function CategoriesManager({ categories }: { categories: CategoryRow[] })
             ) : null}
           </div>
         ) : null}
-      </div>
+      </section>
 
-      {quickColorCategoryId && quickColorAnchor ? (
-        <div
-          onClick={() => {
-            if (quickColorSaving) return;
-            setQuickColorCategoryId(null);
-            setQuickColorAnchor(null);
-          }}
-          style={{ position: "fixed", inset: 0, zIndex: 95 }}
-        >
-          <section
-            className="card"
-            onClick={(event) => event.stopPropagation()}
-            style={{
-              position: "fixed",
-              top: quickColorAnchor.top,
-              left: quickColorAnchor.left,
-              width: 320,
-              padding: 12
+      {
+        quickColorCategoryId && quickColorAnchor ? (
+          <div
+            onClick={() => {
+              if (quickColorSaving) return;
+              setQuickColorCategoryId(null);
+              setQuickColorAnchor(null);
             }}
+            style={{ position: "fixed", inset: 0, zIndex: 95 }}
           >
-            <strong style={{ display: "block", marginBottom: 8 }}>Quick Color</strong>
-            <div style={{ display: "grid", gap: 8 }}>
-              <button
-                type="button"
-                className="button secondary"
-                disabled={quickColorSaving}
-                style={{
-                  justifyContent: "flex-start",
-                  borderColor: quickColorValue === "" ? "#1d4ed8" : undefined,
-                  color: quickColorValue === "" ? "#1d4ed8" : undefined
-                }}
-                onClick={() => {
-                  setQuickColorValue("");
-                  void saveQuickColor("");
-                }}
-              >
-                {quickColorSaving && quickColorValue === "" ? "Saving..." : "No color"}
-              </button>
+            <section
+              className="card"
+              onClick={(event) => event.stopPropagation()}
+              style={{
+                position: "fixed",
+                top: quickColorAnchor?.top ?? 0,
+                left: quickColorAnchor?.left ?? 0,
+                width: 320,
+                padding: 12
+              }}
+            >
+              <strong style={{ display: "block", marginBottom: 8 }}>Quick Color</strong>
+              <div style={{ display: "grid", gap: 8 }}>
+                <button
+                  type="button"
+                  className="button secondary"
+                  disabled={quickColorSaving}
+                  style={{
+                    justifyContent: "flex-start",
+                    borderColor: quickColorValue === "" ? "#1d4ed8" : undefined,
+                    color: quickColorValue === "" ? "#1d4ed8" : undefined
+                  }}
+                  onClick={() => {
+                    setQuickColorValue("");
+                    void saveQuickColor("");
+                  }}
+                >
+                  {quickColorSaving && quickColorValue === "" ? "Saving..." : "No color"}
+                </button>
 
-              <div className="toolbar" style={{ gap: 8 }}>
-                {COLOR_PRESETS.map((color) => {
-                  const selected = quickColorValue.toLowerCase() === color.toLowerCase();
-                  return (
-                    <button
-                      key={color}
-                      type="button"
-                      title={color}
-                      aria-label={`Select color ${color}`}
-                      disabled={quickColorSaving}
-                      onClick={() => {
-                        setQuickColorValue(color);
-                        void saveQuickColor(color);
-                      }}
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: 999,
-                        border: selected ? "2px solid #1d1b16" : "1px solid #ded4c2",
-                        background: color,
-                        cursor: quickColorSaving ? "not-allowed" : "pointer",
-                        padding: 0
-                      }}
-                    />
-                  );
-                })}
+                <div className="toolbar" style={{ gap: 8 }}>
+                  {COLOR_PRESETS.map((color) => {
+                    const selected = quickColorValue.toLowerCase() === color.toLowerCase();
+                    return (
+                      <button
+                        key={color}
+                        type="button"
+                        title={color}
+                        aria-label={`Select color ${color}`}
+                        disabled={quickColorSaving}
+                        onClick={() => {
+                          setQuickColorValue(color);
+                          void saveQuickColor(color);
+                        }}
+                        style={{
+                          width: 28,
+                          height: 28,
+                          borderRadius: 999,
+                          border: selected ? "2px solid #1d1b16" : "1px solid #ded4c2",
+                          background: color,
+                          cursor: quickColorSaving ? "not-allowed" : "pointer",
+                          padding: 0
+                        }}
+                      />
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </section>
-        </div>
-      ) : null}
+            </section>
+          </div>
+        ) : null
+      }
     </div>
   );
 }
